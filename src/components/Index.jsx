@@ -11,6 +11,12 @@ const Index = () => {
         const handleImageChange = (event) => {
             const file = event.target.files[0];
             if (file) {
+                if (!file.type.startsWith('image/')) { //validate whether the file is an image or not
+                    alert("Please upload a valid image")
+                    setImagePreview(null); // Clear the image preview
+                    setSelectedImage(null); // Clear the selected image
+                    return;
+                }
             setSelectedImage(file); // Save the selected file in state
 
             // Generate a preview URL for the image and set it in the state
@@ -23,22 +29,38 @@ const Index = () => {
 
 
         // Handle the button click event to process the stored image
-  const handlePredictClick = () => {
-    if (selectedImage) {
-        // You can add your image processing or comparison logic here
-        console.log("Processing image:", selectedImage);
-  
-        // Example: Replace this with your actual prediction logic
-        const shade = "Shade Example"; // Replace with actual logic
-        const shadeImageUrl = "path_to_shade_image.jpg"; // Replace with the actual image URL of the predicted shade
-  
-        setPredictedShade(shade);  // Update the state to show the predicted shade
-        setShadeImagePreview(shadeImageUrl); // Set the shade image preview
-      } else {
-        setPredictedShade("Please upload an image first.");
-        setShadeImagePreview(null); // Clear the shade image if no image is uploaded
-      }
-  };
+        const handlePredictClick = async () => {
+          if (selectedImage) {
+              const formData = new FormData();
+              formData.append('image', selectedImage); // Add the image file to FormData
+      
+              try {
+                  const response = await fetch('http://127.0.0.1:5000/predict', {
+                      method: 'POST',
+                      body: formData,
+                      
+                  });
+      
+                  if (!response.ok) {
+                      throw new Error('Failed to fetch');
+                  }
+      
+                  const data = await response.json();
+                  setPredictedShade(data.predicted_shade); // Set the predicted shade from the response
+                  setShadeImagePreview(data.shade_image_path); // Set the shade image preview
+      
+              } catch (error) {
+                  console.error('Error:', error);
+                  setPredictedShade('Error predicting shade.');
+                  setShadeImagePreview(null);
+              }
+          } else {
+              alert("Please upload an image");
+              setPredictedShade("Please upload an image first.");
+              setShadeImagePreview(null); // Clear the shade image if no image is uploaded
+          }
+      };
+      
 
   return (
     <div>
